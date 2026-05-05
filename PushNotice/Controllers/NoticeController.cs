@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace TestApi.Controllers
+namespace PushNotice.Controllers
 {
     [ApiController]
     [Route("[controller]")]
