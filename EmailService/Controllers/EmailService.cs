@@ -50,9 +50,6 @@ namespace TestApi.Controllers
             {
                 try
                 {
-                    Console.WriteLine("vars:");
-                    Console.WriteLine(address, api_key);
-
                     using var client = new SmtpClient("smtp.yandex.ru", 587);
                     client.EnableSsl = true;
                     client.Credentials = new NetworkCredential(address, api_key);
@@ -61,7 +58,7 @@ namespace TestApi.Controllers
                     message.From = new MailAddress(address);
                     message.To.Add(Receiver);
 
-                    message.Subject = "Theme";
+                    message.Subject = "Someone theme";
                     message.Body = Text;
 
                     await client.SendMailAsync(message);

@@ -31,7 +31,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Test API v1");
-        c.RoutePrefix = "swagger"; // Swagger UI будет доступен по /swagger
+        c.RoutePrefix = "swagger";
     });
 }
 
