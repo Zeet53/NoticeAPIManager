@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37216.2 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PushNotice", "PushNotice.csproj", "{987BEB6B-26D3-4B33-806C-C9424A23D1DA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{987BEB6B-26D3-4B33-806C-C9424A23D1DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{987BEB6B-26D3-4B33-806C-C9424A23D1DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{987BEB6B-26D3-4B33-806C-C9424A23D1DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{987BEB6B-26D3-4B33-806C-C9424A23D1DA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E411BF43-8A32-497E-BBC8-9F6B724162A5}
+	EndGlobalSection
+EndGlobal

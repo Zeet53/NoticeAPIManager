@@ -1,0 +1,6 @@
+@PushNotice_HostAddress = http://localhost:5078
+
+GET {{PushNotice_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

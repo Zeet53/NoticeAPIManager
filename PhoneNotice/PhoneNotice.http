@@ -1,0 +1,6 @@
+@PhoneNotice_HostAddress = http://localhost:5083
+
+GET {{PhoneNotice_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
