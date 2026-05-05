@@ -2,9 +2,6 @@
 using System.Net;
 using System.Net.Mail;
 
-//Функции: отправить письмо
-// xbdzzriivyxxxnwt
-
 namespace TestApi.Controllers
 {
     [ApiController]
@@ -15,15 +12,6 @@ namespace TestApi.Controllers
         public SendController(IConfiguration config)
         {
             _config = config;
-        }
-
-
-        // GET: api/test
-        [HttpGet]
-        public IActionResult GetAll()
-        {
-            // Здесь должна быть логика получения всех элементов
-            return Ok(new { message = "Get all items" });
         }
 
         [HttpPost]
@@ -43,18 +31,18 @@ namespace TestApi.Controllers
 
         public class Mailing
         {
-            public List<string> Receivers;
-            public string Text;
+            public string Receiver { get; set; }
+            public string Text { get; set; }
 
             public Mailing()
             {
-                Receivers = new List<string>();
+                Receiver = "";
                 Text = "";
             }
 
-            public Mailing(List<string> receivers, string text)
+            public Mailing(string receivers, string text)
             {
-                Receivers = receivers;
+                Receiver = receivers;
                 Text = text;
             }
 
@@ -71,10 +59,7 @@ namespace TestApi.Controllers
 
                     var message = new MailMessage();
                     message.From = new MailAddress(address);
-                    foreach (var receiver in Receivers)
-                    {
-                        message.To.Add(receiver);
-                    }
+                    message.To.Add(Receiver);
 
                     message.Subject = "Theme";
                     message.Body = Text;
