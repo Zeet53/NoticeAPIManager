@@ -17,6 +17,7 @@ namespace DataBaseAPI
         { }
 
         public ITable<TaskTableModel> MailTasks => this.GetTable<TaskTableModel>();
+        public ITable<ArchiveTaskTable> ArchiveTasks => this.GetTable<ArchiveTaskTable>();
         public ITable<UserTableModel> Users => this.GetTable<UserTableModel>();
     }
 }

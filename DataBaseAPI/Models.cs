@@ -30,6 +30,25 @@ namespace DataBaseAPI.Models
         public string status { get; set; }
     }
 
+    [Table(Name = "MailTasksАrchive")]
+    public class ArchiveTaskTable
+    {
+        [Column(IsPrimaryKey = true, IsIdentity = true)]
+        public int id { get; set; }
+        [Column]
+        public string text { get; set; }
+
+        [Column]
+        public string? email_data { get; set; }
+
+        [Column]
+        public string? phone_data { get; set; }
+
+        [Column]
+        public int? personal_number { get; set; }
+
+    }
+
     [Table(Name = "Users")]
     public class UserTableModel
     {
