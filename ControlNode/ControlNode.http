@@ -1,0 +1,6 @@
+@ControlNode_HostAddress = http://localhost:5150
+
+GET {{ControlNode_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

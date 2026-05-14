@@ -3,6 +3,8 @@ using DotNetEnv;
 var builder = WebApplication.CreateBuilder(args);
 
 Env.Load();
+var envPath = Path.Combine(builder.Environment.ContentRootPath, "..", ".env");
+Env.Load(envPath);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

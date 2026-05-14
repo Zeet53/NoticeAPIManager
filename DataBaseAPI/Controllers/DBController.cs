@@ -111,7 +111,7 @@ namespace DataBaseAPI.Controllers
                 return Ok("token is valid");
         }
 
-        [HttpPost("token")]
+        [HttpPost("Token")]
         public async Task<IActionResult> GetToken([FromBody] User userModel)
         {
             try
