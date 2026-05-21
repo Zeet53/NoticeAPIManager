@@ -21,6 +21,7 @@ namespace DataBaseAPI.Controllers
 
         public class Task
         {
+            public int UserId { get; set; }
             public string Text { get; set; }
             public string? EmailData { get; set; }
             public string? PhoneData { get; set; }
@@ -58,7 +59,7 @@ namespace DataBaseAPI.Controllers
                 if (string.IsNullOrWhiteSpace(task.Text))
                     return BadRequest("Text field is required");
 
-                var createdTask = await _taskService.CreateTask(task.Text, task.EmailData, task.PhoneData, task.PersonalNumber);
+                var createdTask = await _taskService.CreateTask(task.UserId, task.Text, task.EmailData, task.PhoneData, task.PersonalNumber);
 
                 return CreatedAtAction(nameof(GetTask), new { id = createdTask.id }, createdTask);
             }
@@ -77,6 +78,28 @@ namespace DataBaseAPI.Controllers
                 return NotFound();
 
             return Ok(task);
+        }
+
+        [HttpPost("User/exists")]
+        public async Task<IActionResult> CheckUserExists([FromBody] User userModel)
+        {
+            try
+            {
+                if (userModel == null || userModel.id == null)
+                    return BadRequest("id, name and password are required");
+
+                if (string.IsNullOrWhiteSpace(userModel.name) || string.IsNullOrWhiteSpace(userModel.password))
+                    return BadRequest("id, name and password are required");
+
+                var exists = await _userService.UserExists(
+                    userModel.id.Value, userModel.name, userModel.password);
+
+                return Ok(new { exists });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         [HttpPost("User")]
@@ -100,65 +123,10 @@ namespace DataBaseAPI.Controllers
             }
         }
 
-        [HttpPost("check_token")]
-        public async Task<IActionResult> checkToken([FromBody] string token)
-        {
-            var tokenInfo = _userService.GetTokenInfo(token);
-
-            if (tokenInfo == null)
-                return BadRequest("token not valid");
-            else
-                return Ok("token is valid");
-        }
-
-        [HttpPost("Token")]
-        public async Task<IActionResult> GetToken([FromBody] User userModel)
-        {
-            try
-            {
-                if (userModel == null)
-                    return BadRequest("user data is null");
-
-                var dbUser = await _userService.GetUser(userModel.id ?? 0, userModel.name, userModel.password);
-
-                if (dbUser == null)
-                    return Unauthorized("user not found or data is incorrect");
-
-                var token = _userService.GenerateJwtToken(new Dictionary<string, object?>()
-                {
-                    { "username", userModel.name },
-                    { "expiration", DateTime.UtcNow.AddHours(1) }
-                });
-
-                return Ok(new { token });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
-
         [HttpGet("test")]
         public IActionResult Test()
         {
-            var token = _userService.GenerateJwtToken(new Dictionary<string, object?>()
-                    {
-                        { "username", "12345" },
-                        { "expiration", DateTime.Now.AddHours(-1) }
-                    });
-
-            var tokenInfo = _userService.GetTokenInfo(token);
-            if (tokenInfo != null)
-            {
-                Console.WriteLine($"Username: {tokenInfo["username"]}");
-                Console.WriteLine($"Expiration: {tokenInfo["expiration"]}");
-            }
-            else
-            {
-                Console.WriteLine("Токен невалиден");
-            }
-
-            return Ok(token);
+            return Ok();
         }
 
         [HttpPut("Task")]
@@ -193,6 +161,22 @@ namespace DataBaseAPI.Controllers
                 return NotFound("Task not found");
 
             return Ok(status);
+        }
+
+        [HttpGet("notifications/{userId}")]
+        public async Task<IActionResult> GetUserNotifications(int userId)
+        {
+            try
+            {
+                var tasks = await _taskService.GetUserTasks(userId);
+                var archive = await _taskService.GetUserArchiveTasks(userId);
+
+                return Ok(new { tasks, archive });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         [HttpDelete("User")]

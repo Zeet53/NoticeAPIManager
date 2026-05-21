@@ -25,7 +25,7 @@ public class UserService
         };
         _cacheHttpClient = new HttpClient(handler);
         _cacheHttpClient.BaseAddress = new Uri(_configuration.GetValue<string>("CacheServer:Url") ?? "http://localhost:5000");
-        _cacheHttpClient.Timeout = TimeSpan.FromSeconds(0.5);
+        _cacheHttpClient.Timeout = TimeSpan.FromSeconds(0.2);
     }
 
     public async Task<UserTableModel> CreateUser(string name, string password)
@@ -60,6 +60,12 @@ public class UserService
         return user;
     }
 
+    public async Task<bool> UserExists(int id, string name, string password)
+    {
+        var user = await GetUser(id, name, password);
+        return user != null;
+    }
+
     public async Task<UserTableModel?> DeleteUser(int id, string name, string password)
     {
         var user = await _db.Users.FirstOrDefaultAsync(u =>
@@ -71,68 +77,6 @@ public class UserService
         await DeleteCacheAsync($"User/{id}");
 
         return user;
-    }
-
-    public string GenerateJwtToken(Dictionary<string, object?> payload)
-    {
-        var username = payload.GetValueOrDefault("username") as string
-            ?? throw new ArgumentException("Dictionary must contain 'username' key with a non-null string value");
-
-        var expiration = payload.GetValueOrDefault("expiration") as DateTime?
-            ?? throw new ArgumentException("Dictionary must contain 'expiration' key with a DateTime value");
-
-        var secretKey = _configuration["Jwt:SecretKey"]
-            ?? throw new InvalidOperationException("JWT SecretKey is not configured");
-
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.Name, username)
-        };
-
-        var token = new JwtSecurityToken(
-            claims: claims,
-            expires: expiration,
-            signingCredentials: credentials
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    public Dictionary<string, object?>? GetTokenInfo(string token)
-    {
-        try
-        {
-            var secretKey = _configuration["Jwt:SecretKey"]
-                    ?? throw new InvalidOperationException("JWT SecretKey is not configured");
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-            var tokenHandler = new JwtSecurityTokenHandler();
-
-            var validationParameters = new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = key,
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
-
-            var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
-            var jwtToken = validatedToken as JwtSecurityToken;
-
-            var username = principal.FindFirst(ClaimTypes.Name)?.Value;
-            DateTime? expirationDate = jwtToken?.ValidTo;
-
-            return new Dictionary<string, object?> { { "username", username }, { "expiration", expirationDate } };
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     private async Task SetCacheAsync<T>(string endpoint, T obj)

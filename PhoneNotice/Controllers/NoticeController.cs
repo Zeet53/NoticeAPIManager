@@ -1,31 +1,39 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 
 namespace PhoneNotice.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class SendPushController : ControllerBase
+    public class SendPhoneController : ControllerBase
     {
         [HttpPost]
-        public async Task<IActionResult> SendPushNotice([FromBody] string phoneNumber)
+        public IActionResult SendPhoneNotice([FromBody] SendRequest request)
         {
-            if (checkNumberValid(phoneNumber))
+            if (!checkNumberValid(request.phoneNumber))
+                return BadRequest("Invalid phone number");
+
+            var msg = new Message
             {
-                return Ok();
-            }
-            else
-            {
-                return BadRequest();
-            }
+                id = request.id,
+                Text = request.text,
+                sendData = request.phoneNumber
+            };
+
+            PhoneSender.Send(msg);
+
+            return Ok("SMS отправлено");
         }
 
         private bool checkNumberValid(string number)
         {
-            if(number.Length == 11 && number.StartsWith('8'))
-            {
-                return true;
-            }
-            return false;
+            return number.Length == 11 && number.StartsWith('8');
         }
+    }
+
+    public class SendRequest
+    {
+        public int id { get; set; }
+        public string text { get; set; } = string.Empty;
+        public string phoneNumber { get; set; } = string.Empty;
     }
 }

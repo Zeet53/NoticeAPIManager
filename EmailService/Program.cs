@@ -1,5 +1,5 @@
-﻿using DotNetEnv;
-using Microsoft.Extensions.Configuration;
+using DotNetEnv;
+using EmailService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,10 +7,10 @@ Env.Load();
 
 builder.Configuration.AddEnvironmentVariables();
 
-// Добавляем контроллеры
 builder.Services.AddControllers();
+builder.Services.AddSingleton<EmailSender>();
+builder.Services.AddHostedService<Consumer>();
 
-// Настройка Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -18,13 +18,12 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Test API",
         Version = "v1",
-        Description = "API для тестирования"
+        Description = "API for email"
     });
 });
 
 var app = builder.Build();
 
-// Включаем Swagger в режиме разработки
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

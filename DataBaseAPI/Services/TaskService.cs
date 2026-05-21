@@ -22,13 +22,14 @@ public class TaskService
         };
         _cacheHttpClient = new HttpClient(handler);
         _cacheHttpClient.BaseAddress = new Uri(_configuration.GetValue<string>("CacheServer:Url") ?? "http://localhost:5000");
-        _cacheHttpClient.Timeout = TimeSpan.FromSeconds(0.5);
+        _cacheHttpClient.Timeout = TimeSpan.FromSeconds(0.2);
     }
 
-    public async Task<TaskTableModel> CreateTask(string text, string? emailData, string? phoneData, int? personalNumber)
+    public async Task<TaskTableModel> CreateTask(int userId, string text, string? emailData, string? phoneData, int? personalNumber)
     {
         var taskModel = new TaskTableModel
         {
+            user_id = userId,
             text = text,
             email_data = emailData,
             phone_data = phoneData,
@@ -80,6 +81,22 @@ public class TaskService
         return task?.status;
     }
 
+    public async Task<List<TaskTableModel>> GetUserTasks(int userId)
+    {
+        return await _db.MailTasks
+            .Where(t => t.user_id == userId)
+            .OrderByDescending(t => t.updated_time)
+            .ToListAsync();
+    }
+
+    public async Task<List<ArchiveTaskTable>> GetUserArchiveTasks(int userId)
+    {
+        return await _db.ArchiveTasks
+            .Where(t => t.user_id == userId)
+            .OrderByDescending(t => t.archiving_time)
+            .ToListAsync();
+    }
+
     public async Task<TaskTableModel?> DeleteFromMain(int id)
     {
         var task = await _db.MailTasks.FirstOrDefaultAsync(t => t.id == id);
@@ -97,6 +114,7 @@ public class TaskService
         var archiveTask = new ArchiveTaskTable()
         {
             id = task.id,
+            user_id = task.user_id,
             text = task.text,
             email_data = task.email_data,
             phone_data = task.phone_data,

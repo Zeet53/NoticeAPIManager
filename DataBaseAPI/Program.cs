@@ -10,6 +10,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHostedService<ArchiveBackgroundService>();
+builder.Services.AddSingleton<StatusUpdateService>();
+builder.Services.AddHostedService<StatusConsumer>();
 
 var app = builder.Build();
 

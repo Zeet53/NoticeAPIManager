@@ -9,6 +9,9 @@ namespace DataBaseAPI.Models
         public int id { get; set; }
 
         [Column]
+        public int user_id { get; set; }
+
+        [Column]
         public string text { get; set; }
 
         [Column]
@@ -36,6 +39,8 @@ namespace DataBaseAPI.Models
         [Column(IsPrimaryKey = true, IsIdentity = true)]
         public int id { get; set; }
         [Column]
+        public int user_id { get; set; }
+        [Column]
         public string text { get; set; }
 
         [Column]
@@ -47,6 +52,8 @@ namespace DataBaseAPI.Models
         [Column]
         public int? personal_number { get; set; }
 
+        [Column]
+        public DateTime archiving_time { get; set; }
     }
 
     [Table(Name = "Users")]

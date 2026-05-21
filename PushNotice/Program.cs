@@ -1,6 +1,9 @@
+using PushNotice;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddHostedService<Consumer>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -9,7 +12,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Test API",
         Version = "v1",
-        Description = "API для тестирования"
+        Description = "API for push notice"
     });
 });
 
@@ -23,13 +26,6 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Test API v1");
         c.RoutePrefix = "swagger";
     });
-}
-
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();

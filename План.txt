@@ -1,19 +1,48 @@
-1. Сервис smtp - 04.05
-2. Сервис push - 05.05
-3. Сервис phone - 05.05
-4. Сервис бд - 08.05
-5. Сервис архивации - 10.05
-6. Сервис кэширования на Redis (для хранения кэша) - 13.05
-7. Сервис на RabbitMQ (для создания очереди на отправку уведомлений) - 15.05
-8. Управляющий API узел (связать работу всех сервисов тут же и настройка портов для каждого, настройка авторизации) - 25.05
+Статус проекта — Система уведомлений (микросервисы)
 
+═══════════════════════════════════════════
+✅ СДЕЛАНО
+═══════════════════════════════════════════
 
+1. EmailService — SMTP-отправка через Yandex, Consumer (RabbitMQ), HTTP-ручка
+2. PushNotice — Consumer (RabbitMQ), PushSender, HTTP-ручка
+3. PhoneNotice — Consumer (RabbitMQ), PhoneSender, HTTP-ручка
+4. DataBaseAPI — CRUD Task/User (PostgreSQL, linq2db), кэширование через Redis
+5. CacheService — Redis CRUD (Task, User, Archive)
+6. ArchiveBackgroundService — автоархивация устаревших задач раз в 24ч
+7. ControlNode — JWT (генерация + проверка), регистрация/логин, отправка через RabbitMQ,
+   GET /health, GET /Task/{id}/status, обновление статуса через 4-ю очередь status_updates
+8. .env — SMTP-креды для EmailService
+9. Статус отправки — Consumer'ы отправляют статус в очередь status_updates,
+   StatusConsumer в DataBaseAPI обновляет статус задачи
+10. Внешний ключ user_id:
+    - Добавлен в таблицы MailTasks и MailTasksArchive
+    - TaskTableModel/ArchiveTaskTable содержат поле user_id
+    - TaskService.CreateTask принимает userId
+11. JWT-авторизация
+    - [Authorize] middleware подключён в ControlNode
+    - Защищены endpoint'ы Send и Task/{id}/status
+    - user_id извлекается из JWT (ClaimTypes.NameIdentifier) вместо хардкода
+    - DataBaseAPI: POST /User/exists — проверка существования пользователя
+12. GET /api/notifications — список задач пользователя
+    - Контроллер получает JWT токен, извлекает user_id
+    - DataBaseAPI фильтрует задачи по user_id
+    - Сначала задачи из MailTasks (сорт. по updated_time), затем из архива (сорт. по archiving_time)
+13. Rate limiting (лимит запросов)
+    - FixedWindow: 10 запросов в минуту на пользователя
+    - Работает на основе user_id из JWT
+    - Включено на Send, Task/{id}/status, notifications
+14. POST /notifications/email|phone|push — отдельные endpoint'ы
+    - /notifications/email — создание email-задачи
+    - /notifications/phone — создание SMS-задачи
+    - /notifications/push — создание push-задачи
+    - Старый /Send и Notify класс оставлены для обратной совместимости
 
-что реализовано из предложенного:
+═══════════════════════════════════════════
+📋 ЧТО ДАЛЬШЕ (в порядке выполнения)
+═══════════════════════════════════════════
 
-асинхронное взаимодействие между сервисами
-архивация и автоматическая очистка
-авторизация с jwt токеном
-получение статуса уведомлений
-проверка работоспособности
-контейнеризация
+1. Контейнеризация (Docker)
+   - Один docker-compose.yml на весь проект
+   - Поднимает PostgreSQL, Redis, RabbitMQ + все 7 микросервисов
+   - Всё работает из коробки одной командой

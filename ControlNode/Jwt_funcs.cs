@@ -31,9 +31,10 @@ namespace ControlNode.Jwt
                 var jwtToken = validatedToken as JwtSecurityToken;
 
                 var username = principal.FindFirst(ClaimTypes.Name)?.Value;
+                var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 DateTime? expirationDate = jwtToken?.ValidTo;
 
-                return new Dictionary<string, object?> { { "username", username }, { "expiration", expirationDate } };
+                return new Dictionary<string, object?> { { "username", username }, { "user_id", userId }, { "expiration", expirationDate } };
             }
             catch
             {
@@ -55,13 +56,17 @@ namespace ControlNode.Jwt
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var claims = new[]
+            var userId = payload.GetValueOrDefault("user_id")
+                ?? throw new ArgumentException("Dictionary must contain 'user_id' key");
+
+            var claimsList = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, username)
+                new Claim(ClaimTypes.Name, username),
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString()!)
             };
 
             var token = new JwtSecurityToken(
-                claims: claims,
+                claims: claimsList,
                 expires: expiration,
                 signingCredentials: credentials
             );
