@@ -18,37 +18,49 @@ public class StatusConsumer : BackgroundService
     {
         var factory = new ConnectionFactory { HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost", UserName = "admin", Password = "admin" };
 
-        await using var connection = await factory.CreateConnectionAsync();
-        await using var channel = await connection.CreateChannelAsync();
-
-        await channel.QueueDeclareAsync("status_updates", durable: true, exclusive: false, autoDelete: false);
-
-        Console.WriteLine("[StatusConsumer] Запущен, ожидание обновлений статуса...");
-
-        var consumer = new AsyncEventingBasicConsumer(channel);
-        consumer.ReceivedAsync += async (model, args) =>
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var body = args.Body.ToArray();
-                var json = Encoding.UTF8.GetString(body);
-                var statusMsg = JsonSerializer.Deserialize<StatusMessage>(json);
+                await using var connection = await factory.CreateConnectionAsync();
+                await using var channel = await connection.CreateChannelAsync();
 
-                if (statusMsg != null)
-                    await _statusUpdateService.UpdateStatus(statusMsg.taskId, statusMsg.status);
+                await channel.QueueDeclareAsync("status_updates", durable: true, exclusive: false, autoDelete: false);
 
-                await channel.BasicAckAsync(args.DeliveryTag, false);
+                Console.WriteLine("[StatusConsumer] Запущен, ожидание обновлений статуса...");
+
+                var consumer = new AsyncEventingBasicConsumer(channel);
+                consumer.ReceivedAsync += async (model, args) =>
+                {
+                    try
+                    {
+                        var body = args.Body.ToArray();
+                        var json = Encoding.UTF8.GetString(body);
+                        var statusMsg = JsonSerializer.Deserialize<StatusMessage>(json);
+
+                        if (statusMsg != null)
+                            await _statusUpdateService.UpdateStatus(statusMsg.taskId, statusMsg.status);
+
+                        await channel.BasicAckAsync(args.DeliveryTag, false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[StatusConsumer] Ошибка: {ex.Message}");
+                        await channel.BasicNackAsync(args.DeliveryTag, false, true);
+                    }
+                };
+
+                await channel.BasicConsumeAsync("status_updates", autoAck: false, consumer: consumer);
+
+                await Task.Delay(Timeout.Infinite, stoppingToken);
+                break;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
-                Console.WriteLine($"[StatusConsumer] Ошибка: {ex.Message}");
-                await channel.BasicNackAsync(args.DeliveryTag, false, true);
+                Console.WriteLine($"[StatusConsumer] RabbitMQ connection failed, retrying in 5s... {ex.Message}");
+                await Task.Delay(5000, stoppingToken);
             }
-        };
-
-        await channel.BasicConsumeAsync("status_updates", autoAck: false, consumer: consumer);
-
-        await Task.Delay(Timeout.Infinite, stoppingToken);
+        }
     }
 }
 

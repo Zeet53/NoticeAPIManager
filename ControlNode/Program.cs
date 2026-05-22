@@ -13,8 +13,21 @@ var envPath = Path.Combine(builder.Environment.ContentRootPath, "..", ".env");
 Env.Load(envPath);
 
 var factory = new ConnectionFactory { HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost", UserName = "admin", Password = "admin" };
-var connection = await factory.CreateConnectionAsync();
-var channel = await connection.CreateChannelAsync();
+
+IChannel channel = null!;
+while (channel == null)
+{
+    try
+    {
+        var connection = await factory.CreateConnectionAsync();
+        channel = await connection.CreateChannelAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"RabbitMQ not ready yet, retrying in 3s... {ex.Message}");
+        await Task.Delay(3000);
+    }
+}
 
 await channel.QueueDeclareAsync("email_notifications", durable: true, exclusive: false, autoDelete: false);
 await channel.QueueDeclareAsync("phone_notifications", durable: true, exclusive: false, autoDelete: false);

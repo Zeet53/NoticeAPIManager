@@ -3,6 +3,7 @@ services:
     image: postgres:16
     environment:
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: notifications
     ports:
       - "5432:5432"
     volumes:
@@ -23,6 +24,7 @@ services:
 
   cache:
     build: ./CacheService
+    restart: always
     depends_on:
       - redis
     environment:
@@ -31,6 +33,7 @@ services:
 
   database:
     build: ./DataBaseAPI
+    restart: always
     depends_on:
       - postgres
       - redis
@@ -44,6 +47,7 @@ services:
 
   email:
     build: ./EmailService
+    restart: always
     depends_on:
       - rabbitmq
       - database
@@ -55,6 +59,7 @@ services:
 
   push:
     build: ./PushNotice
+    restart: always
     depends_on:
       - rabbitmq
       - database
@@ -64,6 +69,7 @@ services:
 
   phone:
     build: ./PhoneNotice
+    restart: always
     depends_on:
       - rabbitmq
       - database
@@ -73,6 +79,7 @@ services:
 
   control:
     build: ./ControlNode
+    restart: always
     ports:
       - "5200:5200"
     depends_on:
