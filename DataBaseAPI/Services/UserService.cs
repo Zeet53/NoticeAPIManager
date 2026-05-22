@@ -24,7 +24,7 @@ public class UserService
             ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
         };
         _cacheHttpClient = new HttpClient(handler);
-        _cacheHttpClient.BaseAddress = new Uri(_configuration.GetValue<string>("CacheServer:Url") ?? "http://localhost:5000");
+        _cacheHttpClient.BaseAddress = new Uri(_configuration.GetValue<string>("CacheServer:Url") ?? "http://localhost:5202");
         _cacheHttpClient.Timeout = TimeSpan.FromSeconds(0.2);
     }
 

@@ -33,10 +33,10 @@ namespace ControlNode.Controllers
             _databaseHttpClient.BaseAddress = new Uri(configuration.GetValue<string>("DataBaseServer:Url")!);
             _databaseHttpClient.Timeout = TimeSpan.FromSeconds(2);
 
-            _emailHttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5203"), Timeout = TimeSpan.FromSeconds(2) };
-            _pushHttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5204"), Timeout = TimeSpan.FromSeconds(2) };
-            _phoneHttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5205"), Timeout = TimeSpan.FromSeconds(2) };
-            _cacheHttpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5202"), Timeout = TimeSpan.FromSeconds(2) };
+            _emailHttpClient = new HttpClient { BaseAddress = new Uri(configuration.GetValue<string>("EmailService:Url")!), Timeout = TimeSpan.FromSeconds(2) };
+            _pushHttpClient = new HttpClient { BaseAddress = new Uri(configuration.GetValue<string>("PushService:Url")!), Timeout = TimeSpan.FromSeconds(2) };
+            _phoneHttpClient = new HttpClient { BaseAddress = new Uri(configuration.GetValue<string>("PhoneService:Url")!), Timeout = TimeSpan.FromSeconds(2) };
+            _cacheHttpClient = new HttpClient { BaseAddress = new Uri(configuration.GetValue<string>("CacheService:Url")!), Timeout = TimeSpan.FromSeconds(2) };
         }
 
         public class RegData

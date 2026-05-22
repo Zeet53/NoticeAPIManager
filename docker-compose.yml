@@ -1,0 +1,93 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+
+  redis:
+    image: redis:7
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+
+  cache:
+    build: ./CacheService
+    depends_on:
+      - redis
+    environment:
+      ASPNETCORE_URLS: http://+:5202
+      Redis: "redis:6379,abortConnect=false"
+
+  database:
+    build: ./DataBaseAPI
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    environment:
+      ASPNETCORE_URLS: http://+:5201
+      CONNECTION_STRING: "Host=postgres;Port=5432;Database=notifications;Username=postgres;Password=postgres"
+      CacheServer__Url: http://cache:5202
+      SelfUrl: http://database:5201
+      RABBITMQ_HOST: rabbitmq
+
+  email:
+    build: ./EmailService
+    depends_on:
+      - rabbitmq
+      - database
+    environment:
+      ASPNETCORE_URLS: http://+:5203
+      RABBITMQ_HOST: rabbitmq
+      MAIL_ADDRESS: ""
+      MAIL_PASSWORD: ""
+
+  push:
+    build: ./PushNotice
+    depends_on:
+      - rabbitmq
+      - database
+    environment:
+      ASPNETCORE_URLS: http://+:5204
+      RABBITMQ_HOST: rabbitmq
+
+  phone:
+    build: ./PhoneNotice
+    depends_on:
+      - rabbitmq
+      - database
+    environment:
+      ASPNETCORE_URLS: http://+:5205
+      RABBITMQ_HOST: rabbitmq
+
+  control:
+    build: ./ControlNode
+    ports:
+      - "5200:5200"
+    depends_on:
+      - database
+      - cache
+      - rabbitmq
+    environment:
+      ASPNETCORE_URLS: http://+:5200
+      SECRET_KEY: super-secret-key-change-me
+      DataBaseServer__Url: http://database:5201
+      EmailService__Url: http://email:5203
+      PushService__Url: http://push:5204
+      PhoneService__Url: http://phone:5205
+      CacheService__Url: http://cache:5202
+      RABBITMQ_HOST: rabbitmq
+
+volumes:
+  pgdata:

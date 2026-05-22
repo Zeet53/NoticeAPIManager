@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 var envPath = Path.Combine(builder.Environment.ContentRootPath, "..", ".env");
 Env.Load(envPath);
 
-var factory = new ConnectionFactory { HostName = "localhost", UserName = "admin", Password = "admin" };
+var factory = new ConnectionFactory { HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost", UserName = "admin", Password = "admin" };
 var connection = await factory.CreateConnectionAsync();
 var channel = await connection.CreateChannelAsync();
 

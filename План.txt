@@ -32,17 +32,13 @@
     - FixedWindow: 10 запросов в минуту на пользователя
     - Работает на основе user_id из JWT
     - Включено на Send, Task/{id}/status, notifications
-14. POST /notifications/email|phone|push — отдельные endpoint'ы
-    - /notifications/email — создание email-задачи
-    - /notifications/phone — создание SMS-задачи
-    - /notifications/push — создание push-задачи
-    - Старый /Send и Notify класс оставлены для обратной совместимости
+15. Контейнеризация (Docker)
+    - 7 Dockerfile'ов (по одному на каждый микросервис)
+    - Один docker-compose.yml на весь проект
+    - postgres-init/init.sql — автосоздание таблиц при первом запуске
+    - Все переменные окружения вынесены в compose (RABBITMQ_HOST, CONNECTION_STRING, URLs)
+    - Запуск одной командой: docker-compose up --build
+    - ⚠️ MAIL_ADDRESS и MAIL_PASSWORD пустые — заполнить перед запуском
 
-═══════════════════════════════════════════
 📋 ЧТО ДАЛЬШЕ (в порядке выполнения)
 ═══════════════════════════════════════════
-
-1. Контейнеризация (Docker)
-   - Один docker-compose.yml на весь проект
-   - Поднимает PostgreSQL, Redis, RabbitMQ + все 7 микросервисов
-   - Всё работает из коробки одной командой
