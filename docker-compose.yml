@@ -88,7 +88,7 @@ services:
       - rabbitmq
     environment:
       ASPNETCORE_URLS: http://+:5200
-      SECRET_KEY: super-secret-key-change-me
+      SECRET_KEY: super-secret-key-change-me-but-its-32-symbols
       DataBaseServer__Url: http://database:5201
       EmailService__Url: http://email:5203
       PushService__Url: http://push:5204
