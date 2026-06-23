@@ -1,3 +1,4 @@
+using PhoneNotice.Models;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
@@ -7,6 +8,13 @@ namespace PhoneNotice;
 
 public class Consumer : BackgroundService
 {
+    private readonly PhoneSender _phoneSender;
+
+    public Consumer(PhoneSender phoneSender)
+    {
+        _phoneSender = phoneSender;
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var factory = new ConnectionFactory { HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost", UserName = "admin", Password = "admin" };
@@ -28,13 +36,13 @@ public class Consumer : BackgroundService
                 {
                     var body = args.Body.ToArray();
                     var json = Encoding.UTF8.GetString(body);
-                    var message = JsonSerializer.Deserialize<Message>(json);
+                    var message = JsonSerializer.Deserialize<PhoneMessage>(json);
                     var taskId = message?.id ?? 0;
 
                     try
                     {
                         if (message != null)
-                            PhoneSender.Send(message);
+                            _phoneSender.Send(message);
 
                         await PublishStatus(channel, taskId, "sended");
                         await channel.BasicAckAsync(args.DeliveryTag, false);

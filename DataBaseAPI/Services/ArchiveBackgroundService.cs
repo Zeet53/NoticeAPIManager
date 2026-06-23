@@ -16,7 +16,7 @@ public class ArchiveBackgroundService : BackgroundService
             try
             {
                 var taskService = new TaskService(_configuration);
-                var expiredTasks = await taskService.getExpiredTask();
+                var expiredTasks = await taskService.GetExpiredTask();
 
                 foreach (var task in expiredTasks)
                 {

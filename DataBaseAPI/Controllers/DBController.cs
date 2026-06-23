@@ -19,37 +19,8 @@ namespace DataBaseAPI.Controllers
             _userService = new UserService(configuration);
         }
 
-        public class Task
-        {
-            public int UserId { get; set; }
-            public string Text { get; set; }
-            public string? EmailData { get; set; }
-            public string? PhoneData { get; set; }
-            public int? PersonalNumber { get; set; }
-
-        }
-
-        public class User
-        {
-            public int? id { get; set; }
-            public string name { get; set; }
-            public string password { get; set; }
-        }
-
-        public class CreateUserRequest
-        {
-            public string name { get; set; }
-            public string password { get; set; }
-        }
-
-        public class UpdateTaskModel
-        {
-            public int id { get; set; }
-            public string status { get; set; }
-        }
-
         [HttpPost("Task")]
-        public async Task<IActionResult> CreateNewTask([FromBody] Task task)
+        public async Task<IActionResult> CreateNewTask([FromBody] CreateTaskRequest task)
         {
             try
             {
@@ -81,7 +52,7 @@ namespace DataBaseAPI.Controllers
         }
 
         [HttpPost("User/exists")]
-        public async Task<IActionResult> CheckUserExists([FromBody] User userModel)
+        public async Task<IActionResult> CheckUserExists([FromBody] UserCheckRequest userModel)
         {
             try
             {
@@ -130,7 +101,7 @@ namespace DataBaseAPI.Controllers
         }
 
         [HttpPut("Task")]
-        public async Task<IActionResult> UpdateStatus([FromBody] UpdateTaskModel model)
+        public async Task<IActionResult> UpdateStatus([FromBody] UpdateStatusRequest model)
         {
             try
             {
@@ -180,7 +151,7 @@ namespace DataBaseAPI.Controllers
         }
 
         [HttpDelete("User")]
-        public async Task<IActionResult> DeleteUser([FromBody] User userModel)
+        public async Task<IActionResult> DeleteUser([FromBody] UserCheckRequest userModel)
         {
             try
             {

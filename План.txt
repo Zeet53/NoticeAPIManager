@@ -1,46 +1,188 @@
-Статус проекта — Система уведомлений (микросервисы)
-
 ═══════════════════════════════════════════
-✅ СДЕЛАНО
+ПЛАН РЕФАКТОРИНГА (по порядку)
 ═══════════════════════════════════════════
 
-1. EmailService — SMTP-отправка через Yandex, Consumer (RabbitMQ), HTTP-ручка
-2. PushNotice — Consumer (RabbitMQ), PushSender, HTTP-ручка
-3. PhoneNotice — Consumer (RabbitMQ), PhoneSender, HTTP-ручка
-4. DataBaseAPI — CRUD Task/User (PostgreSQL, linq2db), кэширование через Redis
-5. CacheService — Redis CRUD (Task, User, Archive)
-6. ArchiveBackgroundService — автоархивация устаревших задач раз в 24ч
-7. ControlNode — JWT (генерация + проверка), регистрация/логин, отправка через RabbitMQ,
-   GET /health, GET /Task/{id}/status, обновление статуса через 4-ю очередь status_updates
-8. .env — SMTP-креды для EmailService
-9. Статус отправки — Consumer'ы отправляют статус в очередь status_updates,
-   StatusConsumer в DataBaseAPI обновляет статус задачи
-10. Внешний ключ user_id:
-    - Добавлен в таблицы MailTasks и MailTasksArchive
-    - TaskTableModel/ArchiveTaskTable содержат поле user_id
-    - TaskService.CreateTask принимает userId
-11. JWT-авторизация
-    - [Authorize] middleware подключён в ControlNode
-    - Защищены endpoint'ы Send и Task/{id}/status
-    - user_id извлекается из JWT (ClaimTypes.NameIdentifier) вместо хардкода
-    - DataBaseAPI: POST /User/exists — проверка существования пользователя
-12. GET /api/notifications — список задач пользователя
-    - Контроллер получает JWT токен, извлекает user_id
-    - DataBaseAPI фильтрует задачи по user_id
-    - Сначала задачи из MailTasks (сорт. по updated_time), затем из архива (сорт. по archiving_time)
-13. Rate limiting (лимит запросов)
-    - FixedWindow: 10 запросов в минуту на пользователя
-    - Работает на основе user_id из JWT
-    - Включено на Send, Task/{id}/status, notifications
-15. Контейнеризация (Docker)
-    - 7 Dockerfile'ов (по одному на каждый микросервис)
-    - Один docker-compose.yml на весь проект
-    - postgres-init/init.sql — автосоздание таблиц при первом запуске
-    - Все переменные окружения вынесены в compose (RABBITMQ_HOST, CONNECTION_STRING, URLs)
-    - Запуск одной командой: docker-compose up --build
-    - ⚠️ MAIL_ADDRESS и MAIL_PASSWORD пустые — заполнить перед запуском
+───────────────────────────────────────────
+1. PASCALCASE — переименование переменных
+───────────────────────────────────────────
 
-📋 ЧТО ДАЛЬШЕ (в порядке выполнения)
+В C# принят PascalCase для публичных методов и свойств (с большой буквы).
+Сейчас код мешает camelCase и PascalCase → приводим к единому стилю.
+
+Какие файлы трогаем:
+
+▪ ControlNode/Controllers/MainController.cs
+  - createUser → CreateUser, loginUser → LoginUser, checkToken → CheckToken, getStatus → GetStatus
+  - Свойства моделей: RegData.name → Name, RegData.password → Password, UserData.id → Id, etc.
+  - QueuedTask.sendData → SendData
+
+▪ ControlNode/Jwt_funcs.cs
+  - GetTokenInfo, GenerateJwtToken — уже норм, проверяем имена параметров
+
+▪ DataBaseAPI/Services/TaskService.cs
+  - getExpiredTask → GetExpiredTask
+
+▪ DataBaseAPI/Controllers/DBController.cs
+  - уже в основном PascalCase, проверить
+
+▪ DataBaseAPI/Models.cs
+  - user_id → UserId, text → Text, email_data → EmailData (snake_case → PascalCase)
+  - но тут важно: это LinqToDB-маппинг на БД. В БД поля snake_case.
+  - Меняем ТОЛЬКО имена C#-свойств. Column-атрибуты оставляем `"user_id"` и т.д.
+
+▪ PhoneNotice/Controllers/NoticeController.cs
+  - checkNumberValid → CheckNumberValid
+
+▪ EmailService/Controllers/EmailService.cs
+  - SendRequest.receiver → Receiver, .text → .Text
+
+▪ CacheService/Models.cs
+  - id → Id, text → Text, name → Name, password → Password + остальные
+
+▪ Все классы DTO/модели внутри контроллеров — проверить имена свойств
+
+
+───────────────────────────────────────────
+2. DTO (Data Transfer Object)
+───────────────────────────────────────────
+
+Суть проблемы: одни и те же данные передаются между сервисами, но в каждом
+сервисе определён свой класс с теми же полями, своим именем, своей кашей.
+
+Например:
+  ControlNode → RabbitMQ → EmailService
+    QueuedTask { id, Text, sendData }  →  EmailMessage { id, Text, sendData }
+
+Что делаем:
+
+▪ Создаём папку Dto/ в каждом микросервисе (или один общий, но для микросервисов
+  проще держать свои — чтобы не было кросс-зависимостей)
+
+▪ Для каждого эндпоинта / очереди заводим отдельный класс-запрос/ответ:
+  - SendEmailRequest, SendPhoneRequest, SendPushRequest
+  - StatusUpdateMessage (для RabbitMQ status_updates)
+  - NotificationTaskMessage (для очередей email/phone/push)
+  - CreateUserRequest, LoginRequest, TaskCreateRequest и т.д.
+
+▪ В контроллерах — Request/Response классы отдельно от "внутренних" моделей
+
+▪ В моделях БД — только маппинг на таблицы (их не трогаем)
+
+▪ В контроллер методы добавляем [FromBody] Dto-классы, а не анонимные/внутренние
+
+
+───────────────────────────────────────────
+3. СТАТИЧЕСКИЕ КЛАССЫ → DI
+───────────────────────────────────────────
+
+Сейчас статические:
+  - PushNotice/Services/PushSender.cs    (static class)
+  - PhoneNotice/Services/PhoneSender.cs  (static class)
+
+EmailSender уже как обычный класс через DI — молодцы.
+
+Что делаем:
+
+▪ PushSender: static class → обычный class, метод Send сделать не-static
+▪ PhoneSender: static class → обычный class, метод Send сделать не-static
+▪ Регистрируем в Program.cs обоих сервисов:
+    builder.Services.AddSingleton<PushSender>();
+    builder.Services.AddSingleton<PhoneSender>();
+▪ В Consumer'ах — внедряем через конструктор (вместо PushSender.Send → _pushSender.Send)
+
+Быстро — 15 минут.
+
+
+───────────────────────────────────────────
+4. ДОБАВЛЯЕМ ИНТЕРФЕЙСЫ
+───────────────────────────────────────────
+
+Зачем: чтобы зависеть от абстракции, а не от реализации.
+Легче тестировать, легче менять реализацию, слабее связан код.
+
+Какие интерфейсы создаём:
+
+▪ DataBaseAPI:
+  - ITaskService  →  TaskService
+  - IUserService  →  UserService
+  - IStatusUpdateService → StatusUpdateService
+
+▪ EmailService:
+  - IEmailSender  →  EmailSender
+
+▪ PushNotice:
+  - IPushSender  →  PushSender  (после превращения в обычный класс)
+
+▪ PhoneNotice:
+  - IPhoneSender →  PhoneSender  (после превращения в обычный класс)
+
+▪ CacheService:
+  - IRedisService → RedisService (если останется, см. п.5)
+
+Где правим:
+  - В каждом сервисе создаём интерфейс (можно в том же файле, или в папке Interfaces/)
+  - В Program.cs регистрируем: builder.Services.AddSingleton<IXXX, XXX>();
+  - В контроллерах/консьюмерах меняем тип поля с конкретного класса на интерфейс
+
+
+───────────────────────────────────────────
+5. УДАЛЯЕМ CACHESERVICE + ПРЯМОЙ REDIS В DATABASEAPI
+───────────────────────────────────────────
+
+Сейчас:  DataBaseAPI → HTTP → CacheService → Redis
+  - 3 сетевых прыжка, задержка, лишняя точка отказа
+
+Стало:   DataBaseAPI → напрямую Redis
+  - меньше сервисов, быстрее, надёжнее
+
+Что делаем:
+
+▪ Удаляем папку CacheService/ целиком (и Dockerfile внутри)
+▪ В DataBaseAPI добавляем NuGet-пакет: StackExchange.Redis
+▪ Создаём в DataBaseAPI/Services/RedisCacheService.cs
+  - копируем логику из старого CacheService/Services/RedisService.cs
+  - добавляем интерфейс IRedisCacheService
+  - регистрируем в Program.cs
+▪ Переписываем TaskService.cs и UserService.cs:
+  - выкидываем _cacheHttpClient и все HTTP-методы (SetCacheAsync, GetCacheAsync, DeleteCacheAsync)
+  - вместо них используем RedisCacheService напрямую
+▪ В DBController — меняем создание сервисов через new() на DI через конструктор:
+    public DBController(ITaskService taskService, IUserService userService)
+▪ В Program.cs DataBaseAPI добавляем регистрацию:
+    builder.Services.AddSingleton<ITaskService, TaskService>();
+    builder.Services.AddSingleton<IUserService, UserService>();
+    builder.Services.AddSingleton<IRedisCacheService, RedisCacheService>();
+
+
+───────────────────────────────────────────
+6. ЧИНИМ DOCKER
+───────────────────────────────────────────
+
+После удаления CacheService из кода — чиним docker-compose.yml:
+
+▪ Удаляем секцию cache: целиком
+▪ В секции database: убираем depends_on от cache
+▪ Убираем CacheServer__Url из environment database
+▪ В секции control: убираем depends_on от cache
+▪ Убираем CacheService__Url из environment control
+▪ Убираем REDIS-переменную из cache-секции (неактуально)
+
+После этого проект чисто собирается: 6 сервисов → 5 сервисов.
+cache-сервис больше не нужен — Redis торчит напрямую.
+
+
+═══════════════════════════════════════════
+ПОРЯДОК ВЫПОЛНЕНИЯ
 ═══════════════════════════════════════════
 
-исправить базовый секретный ключ в конфиге
+1 → 2 → 3 → 4 → 5 → 6
+
+Почему именно так:
+  - Сначала косметика (1), чтобы не мешалась
+  - Потом DTO (2) — уточняем модели данных
+  - Статические → DI (3) — быстро, разогрев
+  - Интерфейсы (4) — их удобно добавлять когда сервисы уже не статические
+  - CacheService/Redis (5) — самая большая переделка
+  - Docker (6) — финальная приборка
+
+После каждого пункта — собираем проект (dotnet build), чтобы не накопить ошибок.

@@ -3,6 +3,9 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+План.txt
+.claude
+
 # dotenv files
 .env
 

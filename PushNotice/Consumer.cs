@@ -1,3 +1,4 @@
+using PushNotice.Models;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
@@ -7,6 +8,13 @@ namespace PushNotice;
 
 public class Consumer : BackgroundService
 {
+    private readonly PushSender _pushSender;
+
+    public Consumer(PushSender pushSender)
+    {
+        _pushSender = pushSender;
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var factory = new ConnectionFactory { HostName = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost", UserName = "admin", Password = "admin" };
@@ -34,7 +42,7 @@ public class Consumer : BackgroundService
                     try
                     {
                         if (message != null)
-                            PushSender.Send(message);
+                            _pushSender.Send(message);
 
                         await PublishStatus(channel, taskId, "sended");
                         await channel.BasicAckAsync(args.DeliveryTag, false);

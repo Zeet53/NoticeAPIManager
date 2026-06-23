@@ -1,3 +1,4 @@
+using EmailService.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EmailService.Controllers
@@ -32,10 +33,4 @@ namespace EmailService.Controllers
         }
     }
 
-    public class SendRequest
-    {
-        public int id { get; set; }
-        public string text { get; set; } = string.Empty;
-        public string receiver { get; set; } = string.Empty;
-    }
 }

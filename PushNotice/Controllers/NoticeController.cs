@@ -1,3 +1,4 @@
+using PushNotice.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace PushNotice.Controllers
@@ -6,6 +7,13 @@ namespace PushNotice.Controllers
     [Route("[controller]")]
     public class SendPushController : ControllerBase
     {
+        private readonly PushSender _pushSender;
+
+        public SendPushController(PushSender pushSender)
+        {
+            _pushSender = pushSender;
+        }
+
         [HttpPost]
         public IActionResult SendPushNotice([FromBody] SendRequest request)
         {
@@ -19,16 +27,10 @@ namespace PushNotice.Controllers
                 sendData = request.personalNumber.ToString()
             };
 
-            PushSender.Send(msg);
+            _pushSender.Send(msg);
 
             return Ok("Push-уведомление отправлено");
         }
     }
 
-    public class SendRequest
-    {
-        public int id { get; set; }
-        public string text { get; set; } = string.Empty;
-        public int personalNumber { get; set; }
-    }
 }

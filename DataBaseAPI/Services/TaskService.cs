@@ -129,7 +129,7 @@ public class TaskService
         return created;
     }
 
-    public async Task<List<TaskTableModel>> getExpiredTask()
+    public async Task<List<TaskTableModel>> GetExpiredTask()
     {
         var expiredDays = _configuration.GetValue<int>("Expired_days");
         var cutoffDate = DateTime.UtcNow.AddDays(-expiredDays);

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ControlNode.Jwt
 {
-    public static class Jwt_funcs
+    public static class JwtFuncs
     {
         public static Dictionary<string, object?>? GetTokenInfo(string token)
         {

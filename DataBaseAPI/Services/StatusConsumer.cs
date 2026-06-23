@@ -1,3 +1,4 @@
+using DataBaseAPI.Models;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
@@ -64,8 +65,3 @@ public class StatusConsumer : BackgroundService
     }
 }
 
-public class StatusMessage
-{
-    public int taskId { get; set; }
-    public string status { get; set; } = string.Empty;
-}

@@ -1,4 +1,5 @@
 using ControlNode.Jwt;
+using ControlNode.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -39,40 +40,8 @@ namespace ControlNode.Controllers
             _cacheHttpClient = new HttpClient { BaseAddress = new Uri(configuration.GetValue<string>("CacheService:Url")!), Timeout = TimeSpan.FromSeconds(2) };
         }
 
-        public class RegData
-        {
-            public string name { get; set; } = string.Empty;
-            public string password { get; set; } = string.Empty;
-        }
-        public class UserData
-        {
-            public int? id { get; set; }
-            public string name { get; set; } = string.Empty;
-            public string password { get; set; } = string.Empty;
-        }
-        public class TaskModel
-        {
-            public int UserId { get; set; }
-            public string Text { get; set; } = string.Empty;
-            public string? EmailData { get; set; }
-            public string? PhoneData { get; set; }
-            public int? PersonalNumber { get; set; }
-
-        }
-        public class QueuedTask
-        {
-            public string Text { get; set; } = string.Empty;
-            public string sendData { get; set; } = string.Empty;
-            public int id { get; set; }
-        }
-        public class NotificationRequest
-        {
-            public string text { get; set; } = string.Empty;
-            public string sendData { get; set; } = string.Empty;
-        }
-
         [HttpPost("User")] //reg
-        public async Task<IActionResult> createUser([FromBody] RegData data)
+        public async Task<IActionResult> CreateUser([FromBody] RegData data)
         {
             if (data == null)
                 return BadRequest("Fill registration data");
@@ -86,7 +55,7 @@ namespace ControlNode.Controllers
         }
 
         [HttpPost("Login")] //get JWT
-        public async Task<IActionResult> loginUser([FromBody] UserData user)
+        public async Task<IActionResult> LoginUser([FromBody] UserData user)
         {
             if (user == null)
                 return BadRequest("User data are required");
@@ -110,7 +79,7 @@ namespace ControlNode.Controllers
                 return StatusCode(503, $"Database service unavailable: {ex.Message}");
             }
 
-            var token = Jwt_funcs.GenerateJwtToken(new Dictionary<string, object?>()
+            var token = JwtFuncs.GenerateJwtToken(new Dictionary<string, object?>()
             {
                 { "username", user.name },
                 { "user_id", user.id },
@@ -120,9 +89,9 @@ namespace ControlNode.Controllers
         }
 
         [HttpPost("Check_token")]
-        public async Task<IActionResult> checkToken([FromBody] string token)
+        public async Task<IActionResult> CheckToken([FromBody] string token)
         {
-            var tokenInfo = Jwt_funcs.GetTokenInfo(token);
+            var tokenInfo = JwtFuncs.GetTokenInfo(token);
 
             if (tokenInfo == null)
                 return BadRequest("token not valid");
@@ -133,7 +102,7 @@ namespace ControlNode.Controllers
         [Authorize]
         [EnableRateLimiting("UserLimit")]
         [HttpGet("Task/{id}/status")]
-        public async Task<IActionResult> getStatus(int id)
+        public async Task<IActionResult> GetStatus(int id)
         {
             try
             {
@@ -184,7 +153,7 @@ namespace ControlNode.Controllers
             if (userIdClaim == null)
                 return Unauthorized("User not found in token");
 
-            var task = new TaskModel
+            var task = new TaskCreateRequest
             {
                 UserId = int.Parse(userIdClaim),
                 Text = data.text,
@@ -223,7 +192,7 @@ namespace ControlNode.Controllers
             if (userIdClaim == null)
                 return Unauthorized("User not found in token");
 
-            var task = new TaskModel
+            var task = new TaskCreateRequest
             {
                 UserId = int.Parse(userIdClaim),
                 Text = data.text,
@@ -262,7 +231,7 @@ namespace ControlNode.Controllers
             if (userIdClaim == null)
                 return Unauthorized("User not found in token");
 
-            var task = new TaskModel
+            var task = new TaskCreateRequest
             {
                 UserId = int.Parse(userIdClaim),
                 Text = data.text,
