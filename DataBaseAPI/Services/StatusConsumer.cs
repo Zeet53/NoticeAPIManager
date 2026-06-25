@@ -8,9 +8,9 @@ namespace DataBaseAPI.Services;
 
 public class StatusConsumer : BackgroundService
 {
-    private readonly StatusUpdateService _statusUpdateService;
+    private readonly IStatusUpdateService _statusUpdateService;
 
-    public StatusConsumer(StatusUpdateService statusUpdateService)
+    public StatusConsumer(IStatusUpdateService statusUpdateService)
     {
         _statusUpdateService = statusUpdateService;
     }

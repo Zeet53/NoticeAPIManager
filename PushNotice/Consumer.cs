@@ -8,9 +8,9 @@ namespace PushNotice;
 
 public class Consumer : BackgroundService
 {
-    private readonly PushSender _pushSender;
+    private readonly IPushSender _pushSender;
 
-    public Consumer(PushSender pushSender)
+    public Consumer(IPushSender pushSender)
     {
         _pushSender = pushSender;
     }

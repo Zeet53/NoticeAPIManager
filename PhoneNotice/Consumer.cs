@@ -8,9 +8,9 @@ namespace PhoneNotice;
 
 public class Consumer : BackgroundService
 {
-    private readonly PhoneSender _phoneSender;
+    private readonly IPhoneSender _phoneSender;
 
-    public Consumer(PhoneSender phoneSender)
+    public Consumer(IPhoneSender phoneSender)
     {
         _phoneSender = phoneSender;
     }

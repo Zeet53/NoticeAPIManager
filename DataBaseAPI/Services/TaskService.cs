@@ -1,28 +1,20 @@
-using System.Text;
-using System.Text.Json;
 using DataBaseAPI.Models;
 using LinqToDB;
 using LinqToDB.Async;
 
 namespace DataBaseAPI.Services;
 
-public class TaskService
+public class TaskService : ITaskService
 {
     private readonly AppDataConnection _db;
     private readonly IConfiguration _configuration;
-    private readonly HttpClient _cacheHttpClient;
+    private readonly IRedisCacheService _cache;
 
-    public TaskService(IConfiguration configuration)
+    public TaskService(IConfiguration configuration, IRedisCacheService cache)
     {
         _db = new AppDataConnection();
         _configuration = configuration;
-        var handler = new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-        };
-        _cacheHttpClient = new HttpClient(handler);
-        _cacheHttpClient.BaseAddress = new Uri(_configuration.GetValue<string>("CacheServer:Url") ?? "http://localhost:5202");
-        _cacheHttpClient.Timeout = TimeSpan.FromSeconds(0.2);
+        _cache = cache;
     }
 
     public async Task<TaskTableModel> CreateTask(int userId, string text, string? emailData, string? phoneData, int? personalNumber)
@@ -42,21 +34,21 @@ public class TaskService
         var insertId = Convert.ToInt32(await _db.InsertWithIdentityAsync(taskModel));
         var createdTask = await _db.MailTasks.FirstOrDefaultAsync(t => t.id == insertId);
 
-        await SetCacheAsync("Task", createdTask);
+        await _cache.SetAsync($"Task:{createdTask.id}", createdTask);
 
         return createdTask;
     }
 
     public async Task<TaskTableModel?> GetTask(int id)
     {
-        var cached = await GetCacheAsync<TaskTableModel>($"Task/{id}");
+        var cached = await _cache.GetAsync<TaskTableModel>($"Task:{id}");
         if (cached != null)
             return cached;
 
         var task = await _db.MailTasks.FirstOrDefaultAsync(t => t.id == id);
 
         if (task != null)
-            await SetCacheAsync("Task", task);
+            await _cache.SetAsync($"Task:{task.id}", task);
 
         return task;
     }
@@ -70,7 +62,7 @@ public class TaskService
         task.updated_time = DateTime.UtcNow;
         await _db.UpdateAsync(task);
 
-        await DeleteCacheAsync($"Task/{id}");
+        await _cache.DeleteAsync($"Task:{id}");
 
         return task;
     }
@@ -104,7 +96,7 @@ public class TaskService
 
         await _db.DeleteAsync(task);
 
-        await DeleteCacheAsync($"Task/{id}");
+        await _cache.DeleteAsync($"Task:{id}");
 
         return task;
     }
@@ -124,7 +116,7 @@ public class TaskService
         var insertId = Convert.ToInt32(await _db.InsertWithIdentityAsync(archiveTask));
         var created = await _db.ArchiveTasks.FirstOrDefaultAsync(t => t.id == insertId);
 
-        await SetCacheAsync("Archive", created);
+        await _cache.SetAsync($"Archive:{created.id}", created);
 
         return created;
     }
@@ -137,47 +129,5 @@ public class TaskService
         return await _db.MailTasks
             .Where(t => t.status != "accepted" && t.updated_time < cutoffDate)
             .ToListAsync();
-    }
-
-    private async Task SetCacheAsync<T>(string endpoint, T obj)
-    {
-        try
-        {
-            var json = JsonSerializer.Serialize(obj);
-            await _cacheHttpClient.PostAsync(endpoint, new StringContent(json, Encoding.UTF8, "application/json"));
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Cache set error ({endpoint}): {ex.Message}");
-        }
-    }
-
-    private async Task<T?> GetCacheAsync<T>(string endpoint) where T : class
-    {
-        try
-        {
-            var response = await _cacheHttpClient.GetAsync(endpoint);
-            if (!response.IsSuccessStatusCode) return null;
-
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<T>(json);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Cache get error ({endpoint}): {ex.Message}");
-            return null;
-        }
-    }
-
-    private async Task DeleteCacheAsync(string endpoint)
-    {
-        try
-        {
-            await _cacheHttpClient.DeleteAsync(endpoint);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Cache delete error ({endpoint}): {ex.Message}");
-        }
     }
 }

@@ -22,15 +22,6 @@ services:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: admin
 
-  cache:
-    build: ./CacheService
-    restart: always
-    depends_on:
-      - redis
-    environment:
-      ASPNETCORE_URLS: http://+:5202
-      Redis: "redis:6379,abortConnect=false"
-
   database:
     build: ./DataBaseAPI
     restart: always
@@ -41,7 +32,7 @@ services:
     environment:
       ASPNETCORE_URLS: http://+:5201
       CONNECTION_STRING: "Host=postgres;Port=5432;Database=notifications;Username=postgres;Password=postgres"
-      CacheServer__Url: http://cache:5202
+      Redis: "redis:6379,abortConnect=false"
       SelfUrl: http://database:5201
       RABBITMQ_HOST: rabbitmq
 
@@ -84,7 +75,6 @@ services:
       - "5200:5200"
     depends_on:
       - database
-      - cache
       - rabbitmq
     environment:
       ASPNETCORE_URLS: http://+:5200
@@ -93,7 +83,6 @@ services:
       EmailService__Url: http://email:5203
       PushService__Url: http://push:5204
       PhoneService__Url: http://phone:5205
-      CacheService__Url: http://cache:5202
       RABBITMQ_HOST: rabbitmq
 
 volumes:

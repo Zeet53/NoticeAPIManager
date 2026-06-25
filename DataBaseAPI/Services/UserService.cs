@@ -1,31 +1,20 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using System.Text.Json;
 using DataBaseAPI.Models;
 using LinqToDB;
 using LinqToDB.Async;
-using Microsoft.IdentityModel.Tokens;
 
 namespace DataBaseAPI.Services;
 
-public class UserService
+public class UserService : IUserService
 {
     private readonly AppDataConnection _db;
     private readonly IConfiguration _configuration;
-    private readonly HttpClient _cacheHttpClient;
+    private readonly IRedisCacheService _cache;
 
-    public UserService(IConfiguration configuration)
+    public UserService(IConfiguration configuration, IRedisCacheService cache)
     {
         _db = new AppDataConnection();
         _configuration = configuration;
-        var handler = new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-        };
-        _cacheHttpClient = new HttpClient(handler);
-        _cacheHttpClient.BaseAddress = new Uri(_configuration.GetValue<string>("CacheServer:Url") ?? "http://localhost:5202");
-        _cacheHttpClient.Timeout = TimeSpan.FromSeconds(0.2);
+        _cache = cache;
     }
 
     public async Task<UserTableModel> CreateUser(string name, string password)
@@ -40,14 +29,14 @@ public class UserService
         var createdUser = await _db.Users.FirstOrDefaultAsync(u => u.id == insertId);
         Console.WriteLine($"name - {createdUser.name}, pass - {createdUser.password}");
 
-        await SetCacheAsync("User", createdUser);
+        await _cache.SetAsync($"User:{createdUser.id}", createdUser);
 
         return createdUser;
     }
 
     public async Task<UserTableModel?> GetUser(int id, string name, string password)
     {
-        var cached = await GetCacheAsync<UserTableModel>($"User/{id}");
+        var cached = await _cache.GetAsync<UserTableModel>($"User:{id}");
         if (cached != null && cached.name == name && cached.password == password)
             return cached;
 
@@ -55,7 +44,7 @@ public class UserService
             u.id == id && u.name == name && u.password == password);
 
         if (user != null)
-            await SetCacheAsync("User", user);
+            await _cache.SetAsync($"User:{user.id}", user);
 
         return user;
     }
@@ -74,50 +63,8 @@ public class UserService
 
         await _db.DeleteAsync(user);
 
-        await DeleteCacheAsync($"User/{id}");
+        await _cache.DeleteAsync($"User:{id}");
 
         return user;
-    }
-
-    private async Task SetCacheAsync<T>(string endpoint, T obj)
-    {
-        try
-        {
-            var json = JsonSerializer.Serialize(obj);
-            await _cacheHttpClient.PostAsync(endpoint, new StringContent(json, Encoding.UTF8, "application/json"));
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Cache set error ({endpoint}): {ex.Message}");
-        }
-    }
-
-    private async Task<T?> GetCacheAsync<T>(string endpoint) where T : class
-    {
-        try
-        {
-            var response = await _cacheHttpClient.GetAsync(endpoint);
-            if (!response.IsSuccessStatusCode) return null;
-
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<T>(json);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Cache get error ({endpoint}): {ex.Message}");
-            return null;
-        }
-    }
-
-    private async Task DeleteCacheAsync(string endpoint)
-    {
-        try
-        {
-            await _cacheHttpClient.DeleteAsync(endpoint);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Cache delete error ({endpoint}): {ex.Message}");
-        }
     }
 }

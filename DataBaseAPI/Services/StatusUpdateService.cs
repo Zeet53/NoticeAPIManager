@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace DataBaseAPI.Services;
 
-public class StatusUpdateService
+public class StatusUpdateService : IStatusUpdateService
 {
     private readonly HttpClient _httpClient;
 

@@ -12,6 +12,7 @@
     <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
     <PackageReference Include="linq2db.PostgreSQL" Version="6.2.1" />
     <PackageReference Include="Npgsql" Version="10.0.2" />
+    <PackageReference Include="StackExchange.Redis" Version="3.0.7" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />
   </ItemGroup>

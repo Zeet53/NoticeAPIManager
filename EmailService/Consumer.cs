@@ -8,9 +8,9 @@ namespace EmailService;
 
 public class Consumer : BackgroundService
 {
-    private readonly EmailSender _emailSender;
+    private readonly IEmailSender _emailSender;
 
-    public Consumer(EmailSender emailSender)
+    public Consumer(IEmailSender emailSender)
     {
         _emailSender = emailSender;
     }

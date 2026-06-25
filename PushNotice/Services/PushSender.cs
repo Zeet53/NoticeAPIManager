@@ -2,7 +2,7 @@ using PushNotice.Models;
 
 namespace PushNotice;
 
-public class PushSender
+public class PushSender : IPushSender
 {
     public void Send(PushMessage msg)
     {

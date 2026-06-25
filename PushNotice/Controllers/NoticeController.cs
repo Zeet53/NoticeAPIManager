@@ -7,9 +7,9 @@ namespace PushNotice.Controllers
     [Route("[controller]")]
     public class SendPushController : ControllerBase
     {
-        private readonly PushSender _pushSender;
+        private readonly IPushSender _pushSender;
 
-        public SendPushController(PushSender pushSender)
+        public SendPushController(IPushSender pushSender)
         {
             _pushSender = pushSender;
         }

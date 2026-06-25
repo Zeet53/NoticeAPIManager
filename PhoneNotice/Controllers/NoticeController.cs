@@ -7,9 +7,9 @@ namespace PhoneNotice.Controllers
     [Route("[controller]")]
     public class SendPhoneController : ControllerBase
     {
-        private readonly PhoneSender _phoneSender;
+        private readonly IPhoneSender _phoneSender;
 
-        public SendPhoneController(PhoneSender phoneSender)
+        public SendPhoneController(IPhoneSender phoneSender)
         {
             _phoneSender = phoneSender;
         }

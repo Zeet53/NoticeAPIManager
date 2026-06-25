@@ -2,11 +2,11 @@ namespace DataBaseAPI.Services;
 
 public class ArchiveBackgroundService : BackgroundService
 {
-    private readonly IConfiguration _configuration;
+    private readonly ITaskService _taskService;
 
-    public ArchiveBackgroundService(IConfiguration configuration)
+    public ArchiveBackgroundService(ITaskService taskService)
     {
-        _configuration = configuration;
+        _taskService = taskService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -15,13 +15,12 @@ public class ArchiveBackgroundService : BackgroundService
         {
             try
             {
-                var taskService = new TaskService(_configuration);
-                var expiredTasks = await taskService.GetExpiredTask();
+                var expiredTasks = await _taskService.GetExpiredTask();
 
                 foreach (var task in expiredTasks)
                 {
-                    await taskService.AddToArchive(task);
-                    await taskService.DeleteFromMain(task.id);
+                    await _taskService.AddToArchive(task);
+                    await _taskService.DeleteFromMain(task.id);
                 }
             }
             catch (Exception ex)

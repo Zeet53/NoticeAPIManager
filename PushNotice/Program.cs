@@ -3,7 +3,7 @@ using PushNotice;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AddSingleton<PushSender>();
+builder.Services.AddSingleton<IPushSender, PushSender>();
 builder.Services.AddHostedService<Consumer>();
 
 builder.Services.AddEndpointsApiExplorer();

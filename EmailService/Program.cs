@@ -8,7 +8,7 @@ Env.Load();
 builder.Configuration.AddEnvironmentVariables();
 
 builder.Services.AddControllers();
-builder.Services.AddSingleton<EmailSender>();
+builder.Services.AddSingleton<IEmailSender, EmailSender>();
 builder.Services.AddHostedService<Consumer>();
 
 builder.Services.AddEndpointsApiExplorer();

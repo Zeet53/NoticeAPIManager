@@ -2,7 +2,7 @@ using PhoneNotice.Models;
 
 namespace PhoneNotice;
 
-public class PhoneSender
+public class PhoneSender : IPhoneSender
 {
     public void Send(PhoneMessage msg)
     {

@@ -7,9 +7,9 @@ namespace EmailService.Controllers
     [Route("[controller]")]
     public class SendController : ControllerBase
     {
-        private readonly EmailSender _emailSender;
+        private readonly IEmailSender _emailSender;
 
-        public SendController(EmailSender emailSender)
+        public SendController(IEmailSender emailSender)
         {
             _emailSender = emailSender;
         }

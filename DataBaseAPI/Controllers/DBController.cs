@@ -11,12 +11,12 @@ namespace DataBaseAPI.Controllers
     [Route("")]
     public class DBController : ControllerBase
     {
-        private readonly TaskService _taskService;
-        private readonly UserService _userService;
-        public DBController(IConfiguration configuration)
+        private readonly ITaskService _taskService;
+        private readonly IUserService _userService;
+        public DBController(ITaskService taskService, IUserService userService)
         {
-            _taskService = new TaskService(configuration);
-            _userService = new UserService(configuration);
+            _taskService = taskService;
+            _userService = userService;
         }
 
         [HttpPost("Task")]

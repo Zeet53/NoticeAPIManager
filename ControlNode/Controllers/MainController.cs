@@ -19,7 +19,6 @@ namespace ControlNode.Controllers
         private readonly HttpClient _emailHttpClient;
         private readonly HttpClient _pushHttpClient;
         private readonly HttpClient _phoneHttpClient;
-        private readonly HttpClient _cacheHttpClient;
         private readonly IChannel _channel;
 
         public MainController(IConfiguration configuration, IChannel channel)
@@ -37,7 +36,6 @@ namespace ControlNode.Controllers
             _emailHttpClient = new HttpClient { BaseAddress = new Uri(configuration.GetValue<string>("EmailService:Url")!), Timeout = TimeSpan.FromSeconds(2) };
             _pushHttpClient = new HttpClient { BaseAddress = new Uri(configuration.GetValue<string>("PushService:Url")!), Timeout = TimeSpan.FromSeconds(2) };
             _phoneHttpClient = new HttpClient { BaseAddress = new Uri(configuration.GetValue<string>("PhoneService:Url")!), Timeout = TimeSpan.FromSeconds(2) };
-            _cacheHttpClient = new HttpClient { BaseAddress = new Uri(configuration.GetValue<string>("CacheService:Url")!), Timeout = TimeSpan.FromSeconds(2) };
         }
 
         [HttpPost("User")] //reg
@@ -267,7 +265,6 @@ namespace ControlNode.Controllers
             result["email"] = await PingService(_emailHttpClient, "EmailService");
             result["push"] = await PingService(_pushHttpClient, "PushNotice");
             result["phone"] = await PingService(_phoneHttpClient, "PhoneNotice");
-            result["cache"] = await PingService(_cacheHttpClient, "CacheService");
 
             try
             {

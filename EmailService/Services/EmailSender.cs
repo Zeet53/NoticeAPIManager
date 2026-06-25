@@ -4,7 +4,7 @@ using System.Net.Mail;
 
 namespace EmailService;
 
-public class EmailSender
+public class EmailSender : IEmailSender
 {
     private readonly string _address;
     private readonly string _password;
